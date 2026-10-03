@@ -52,15 +52,17 @@ PostgreSQL backend)
 ```
 
 ---
+
 ## 📸 Application Screenshots
 
 ### 🔍 Security Analysis Workspace
 
-![CodeSage AI Workspace](PASTE_IMAGE_FILENAME_HERE)
+![CodeSage AI Workspace](./Screenshot%202026-10-03%20224121.png)
 
 ### 🛡️ Security Findings & Quality Score
 
-![CodeSage AI Security Findings](PASTE_IMAGE_FILENAME_HERE)
+![CodeSage AI Security Findings](./Screenshot%202026-10-03%20224127.png)
+
 ## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Monaco Editor (`@monaco-editor/react`), Lucide React.
