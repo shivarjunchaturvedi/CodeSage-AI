@@ -1,0 +1,8 @@
+{
+  "name": "CodeSage AI",
+  "description": "AI-Powered Code Review, Bug Detection & Security Analysis Platform with deterministic static analysis, security rule engine, and developer workspace.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "DETERMINISTIC_LOCAL_CODE_ANALYSIS"
+  ]
+}
