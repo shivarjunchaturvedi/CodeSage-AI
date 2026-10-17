@@ -1,5 +1,19 @@
+<div align="center">
+
 # CodeSage AI
-> **AI-Powered Code Review, Bug Detection & Security Analysis Platform**
+
+### Code Review · Bug Detection · Defensive Security Analysis
+
+Analyze code quality and potential security issues with deterministic static checks, CWE-oriented rules, transparent scoring, and remediation guidance.
+
+![React](https://img.shields.io/badge/React-19-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+![Security](https://img.shields.io/badge/Focus-Defensive%20Analysis-6D28D9?style=flat-square)
+
+[Features](#key-features) · [Tech Stack](#tech-stack) · [Run Locally](#running-locally) · [Security Model](#security-model-zero-execution-policy)
+
+</div>
 
 [![Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20React%2019%20%7C%20TypeScript%20%7C%20PostgreSQL-blue)](#tech-stack)
 [![Security](https://img.shields.io/badge/Security-CWE%20Verified%20%7C%20Zero--Execution-emerald)](#security-architecture)
