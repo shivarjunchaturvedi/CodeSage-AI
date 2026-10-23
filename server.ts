@@ -32,45 +32,74 @@ async function startServer() {
   });
 
   // 2. Auth Endpoints
+  const authSessions = new Map<string, string>();
+
   app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const { email, password } = req.body ?? {};
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
-    const user = store.users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || {
-      id: 'usr-' + Date.now(),
-      email,
-      fullName: email.split('@')[0],
-      role: 'developer' as const,
-      createdAt: new Date().toISOString(),
-    };
-    return res.json({
-      token: 'jwt_mock_token_' + Buffer.from(email).toString('base64'),
-      user,
-    });
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = store.users.find((u) => u.email.toLowerCase() === normalizedEmail);
+    if (!user || user.passwordHash !== crypto.createHash('sha256').update(password).digest('hex')) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+    const token = crypto.randomBytes(32).toString('base64url');
+    authSessions.set(token, user.id);
+    return res.json({ token, user: publicUser(user) });
   });
 
   app.post('/api/auth/register', (req, res) => {
-    const { email, password, fullName } = req.body;
-    if (!email || !password) {
+    const { email, password, fullName } = req.body ?? {};
+    if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedName = typeof fullName === 'string' && fullName.trim()
+      ? fullName.trim()
+      : normalizedEmail.split('@')[0];
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Enter a valid email address.' });
+    }
+    if (password.length < 12 || password.length > 128) {
+      return res.status(400).json({ error: 'Password must be between 12 and 128 characters.' });
+    }
+    if (normalizedName.length > 100) {
+      return res.status(400).json({ error: 'Full name must not exceed 100 characters.' });
+    }
+    if (store.users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
+      return res.status(409).json({ error: 'An account with this email already exists.' });
+    }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = crypto.scryptSync(password, salt, 64).toString('hex');
     const newUser = {
-      id: 'usr-' + Date.now(),
-      email,
-      fullName: fullName || email.split('@')[0],
+      id: 'usr-' + crypto.randomUUID(),
+      email: normalizedEmail,
+      fullName: normalizedName,
       role: 'developer' as const,
       createdAt: new Date().toISOString(),
+      passwordSalt: salt,
+      passwordHash,
     };
     store.users.push(newUser);
-    return res.status(201).json({
-      token: 'jwt_mock_token_' + Buffer.from(email).toString('base64'),
-      user: newUser,
-    });
+    const token = crypto.randomBytes(32).toString('base64url');
+    authSessions.set(token, newUser.id);
+    return res.status(201).json({ token, user: publicUser(newUser) });
   });
 
+  function publicUser(user: any) {
+    const { passwordHash: _passwordHash, passwordSalt: _passwordSalt, ...safeUser } = user;
+    return safeUser;
+  }
+
   app.get('/api/auth/me', (req, res) => {
-    res.json({ user: store.users[0] });
+    const authorization = req.headers.authorization || '';
+    const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+    const userId = authSessions.get(token);
+    const user = store.users.find((candidate) => candidate.id === userId);
+    if (!user) return res.status(401).json({ error: 'Authentication required.' });
+    return res.json({ user: publicUser(user) });
   });
 
   // 3. Projects Endpoints
