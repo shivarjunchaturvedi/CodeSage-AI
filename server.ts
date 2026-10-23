@@ -42,8 +42,26 @@ async function startServer() {
     }
     const normalizedEmail = email.trim().toLowerCase();
     const user = store.users.find((u) => u.email.toLowerCase() === normalizedEmail);
-    if (!user || user.passwordHash !== crypto.createHash('sha256').update(password).digest('hex')) {
+    if (!user) {
       return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    // Support both current scrypt hashes and accounts created by the earlier demo hash.
+    const passwordIsValid = user.passwordHash.startsWith('scrypt:')
+      ? (() => {
+          const expected = Buffer.from(user.passwordHash.slice('scrypt:'.length), 'hex');
+          const actual = crypto.scryptSync(password, user.passwordSalt || '', 64);
+          return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+        })()
+      : user.passwordHash === crypto.createHash('sha256').update(password).digest('hex');
+    if (!passwordIsValid) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    // Upgrade a legacy hash after successful login.
+    if (!user.passwordHash.startsWith('scrypt:')) {
+      user.passwordSalt = crypto.randomBytes(16).toString('hex');
+      user.passwordHash = 'scrypt:' + crypto.scryptSync(password, user.passwordSalt, 64).toString('hex');
     }
     const token = crypto.randomBytes(32).toString('base64url');
     authSessions.set(token, user.id);
@@ -73,7 +91,7 @@ async function startServer() {
     }
 
     const salt = crypto.randomBytes(16).toString('hex');
-    const passwordHash = crypto.scryptSync(password, salt, 64).toString('hex');
+    const passwordHash = 'scrypt:' + crypto.scryptSync(password, salt, 64).toString('hex');
     const newUser = {
       id: 'usr-' + crypto.randomUUID(),
       email: normalizedEmail,
